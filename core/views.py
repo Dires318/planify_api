@@ -206,7 +206,7 @@ def login_view(request):
     if user is None:
         return Response(
             {'detail': 'Invalid credentials.'},
-            status=status.HTTP_401_UNAUTHORIZED
+            status=status.HTTP_400_BAD_REQUEST
         )
     
     refresh = RefreshToken.for_user(user)
@@ -260,20 +260,26 @@ def login_view(request):
 
 @api_view(['POST'])
 @ensure_csrf_cookie
+@permission_classes([AllowAny])
 def logout_view(request):
-    try:
-        refresh_token = request.COOKIES.get('refresh_token')
-        if refresh_token:
+    refresh_token = request.COOKIES.get('refresh_token')
+    if refresh_token:
+        try:
             token = RefreshToken(refresh_token)
             token.blacklist()
-        
-        response = Response({'detail': 'Successfully logged out.'})
-        unset_auth_cookies(response)
-        return response
-    except Exception as e:
+            response = Response({'detail': 'Successfully logged out.'})
+            unset_auth_cookies(response)
+            return response
+        except Exception as e:
+            print(e)
+            return Response(
+                {'detail': 'Error during logout.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    else:
         return Response(
-            {'detail': 'Error during logout.'},
-            status=status.HTTP_400_BAD_REQUEST
+            {'detail': 'No refresh token found.'},
+            status=status.HTTP_200_OK
         )
 
 @api_view(['POST'])
@@ -358,7 +364,7 @@ def refresh_token_view(request):
         if not refresh_token:
             return Response(
                 {'detail': 'No refresh token found.'},
-                status=status.HTTP_401_UNAUTHORIZED
+                status=status.HTTP_400_BAD_REQUEST
             )
         
         token = RefreshToken(refresh_token)
