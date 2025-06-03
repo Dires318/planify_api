@@ -1,0 +1,8 @@
+.env
+deploy.sh
+README.md
+venv
+.gitignore
+db.sqlite3
+.git
+.github
